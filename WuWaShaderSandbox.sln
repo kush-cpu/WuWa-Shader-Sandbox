@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShaderApp", "ShaderApp\ShaderApp.vcxproj", "{DDDEABCC-4949-6043-9287-11E9FE303E98}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DDDEABCC-4949-6043-9287-11E9FE303E98}.Debug|x64.ActiveCfg = Debug|x64
+		{DDDEABCC-4949-6043-9287-11E9FE303E98}.Debug|x64.Build.0 = Debug|x64
+		{DDDEABCC-4949-6043-9287-11E9FE303E98}.Release|x64.ActiveCfg = Release|x64
+		{DDDEABCC-4949-6043-9287-11E9FE303E98}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
