@@ -2,13 +2,14 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#include <d3dx12.h>
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 #include <stdexcept>
 #include <string>
 #include <vector>
 #include <algorithm>
-#include "renderer/dx12_renderer.h"
+//#include "renderer/dx12_renderer.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -84,7 +85,7 @@ private:
 #endif
 
 // ---- renderer/dx12_renderer.cpp ----
-#include "dx12_renderer.h"
+//#include <dx12_renderer.h>
 #include <d3dx12.h>
 #include <stdexcept>
 
@@ -96,7 +97,7 @@ void DX12Renderer::RenderFrame() {
     UINT backBufferIndex = gSwapChain->GetCurrentBackBufferIndex();
 
     gCommandAllocator->Reset();
-    gCommandList->Reset(gPipelineState.Get(), nullptr);
+    gCommandList->Reset(gCommandAllocator.Get(), nullptr);
 
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;

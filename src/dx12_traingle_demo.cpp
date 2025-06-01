@@ -34,6 +34,8 @@ ComPtr<ID3D12PipelineState> pipelineState;
 ComPtr<ID3D12RootSignature> rootSignature;
 ComPtr<ID3D12Resource> vertexBuffer;
 D3D12_VERTEX_BUFFER_VIEW vbView = {};
+ComPtr<ID3D12Resource> gVertexBuffer;
+D3D12_VERTEX + BUFFER_VIEW gVertexBufferView;
 
 HWND hwnd;
 UINT rtvDescriptorSize;
@@ -84,6 +86,57 @@ void InitD3D() {
     CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory));
 
     D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device));
+
+    // Load compiled shader blobs
+    ComPtr<ID3DBlob> vertexShader, pixelShader;
+
+    {
+        // Load from file
+        std::ifstream vsFile("shaders/basic_vs.cso", std::ios::binary);
+        std::ifstream psFile("shaders/basic_ps.cso", std::ios::binary);
+        std::vector<char> vsData((std::istreambuf_iterator<char>(vsFile)), std::istreambuf_iterator<char>());
+        std::vector<char> psData((std::istreambuf_iterator<char>(psFile)), std::istreambuf_iterator<char>());
+
+        D3DCreateBlob(vsData.size(), &vertexShader);
+        memcpy(vertexShader->GetBufferPointer(), vsData.data(), vsData.size());
+
+        D3DCreateBlob(psData.size(), &pixelShader);
+        memcpy(pixelShader->GetBufferPointer(), psData.data(), psData.size());
+    }
+
+    struct Vertex {
+        float x, y, z;
+    };
+
+    Vertex triangleVertices[] = {
+        { 0.0f,  0.25f, 0.0f },
+        { 0.25f, -0.25f, 0.0f },
+        { -0.25f, -0.25f, 0.0f }
+    };
+
+    const UINT vertexBufferSize = sizeof(triangleVertices);
+
+    CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE_UPLOAD);
+    CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
+
+    gDevice->CreateCommittedResource(
+        &heapProps,
+        D3D12_HEAP_FLAG_NONE,
+        &bufferDesc,
+        D3D12_RESOURCE_STATE_GENERIC_READ,
+        nullptr,
+        IID_PPV_ARGS(&gVertexBuffer));
+
+    void* pVertexDataBegin;
+    CD3DX12_RANGE readRange(0, 0); // We do not intend to read from this resource
+    gVertexBuffer->Map(0, &readRange, &pVertexDataBegin);
+    memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
+    gVertexBuffer->Unmap(0, nullptr);
+
+    gVertexBufferView.BufferLocation = gVertexBuffer->GetGPUVirtualAddress();
+    gVertexBufferView.StrideInBytes = sizeof(Vertex);
+    gVertexBufferView.SizeInBytes = vertexBufferSize;
+
 
     D3D12_COMMAND_QUEUE_DESC queueDesc = {};
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -137,9 +190,11 @@ void LoadAssets() {
           D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
     };
 
+    psoDec.InputLayout = { inputElementsDescs, _countof(inputElementsDescs) };
+
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-    psoDesc.InputLayout = { inputLayout, _countof(inputLayout) };
-    psoDesc.pRootSignature = rootSignature.Get();
+    psoDesc.InputLayout = { nullptr, 0 }; // No layout yet
+    psoDesc.pRootSignature = gRootSignature;
     psoDesc.VS = { vertexShader->GetBufferPointer(), vertexShader->GetBufferSize() };
     psoDesc.PS = { pixelShader->GetBufferPointer(), pixelShader->GetBufferSize() };
     psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -152,7 +207,8 @@ void LoadAssets() {
     psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
     psoDesc.SampleDesc.Count = 1;
 
-    device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState));
+    gDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&gPipelineState));
+
 
     device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
         commandAllocator.Get(), pipelineState.Get(),
@@ -186,7 +242,10 @@ void LoadAssets() {
 }
 
 void Render() {
-    // Placeholder: clear, draw, present
+    gCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    gCommandList->IASetVertexBuffers(0, 1, &gVertexBufferView);
+    gCommandList->DrawInstanced(3, 1, 0, 0);
+
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
